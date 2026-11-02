@@ -1,5 +1,5 @@
-# mod-status.toml - copy to the root of your mod's repo and edit.
-# Docs: https://github.com/KiefBC/mod-status
+# baise.toml - copy to the root of your mod's repo and edit.
+# Docs: https://github.com/KiefBC/baise
 
 [source]
 kind = "steam"

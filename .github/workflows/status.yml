@@ -5,23 +5,23 @@
 #
 # Nothing is compiled here: it downloads the prebuilt static binary from this
 # repo's release, so a run takes seconds.
-name: mod-status
+name: baise
 
 on:
   workflow_call:
     inputs:
       config:
-        description: Path to mod-status.toml in the calling repo.
+        description: Path to baise.toml in the calling repo.
         type: string
-        default: mod-status.toml
+        default: baise.toml
       branch:
         description: Branch the cards are published to. It is rewritten on every run.
         type: string
         default: badges
       version:
-        description: The mod-status release to download. Keep it equal to the @ref you call this workflow with.
+        description: The baise release to download. Keep it equal to the @ref you call this workflow with.
         type: string
-        default: v0.1.0
+        default: v0.2.0
       mod:
         description: Optional manual override - the mod key.
         type: string
@@ -38,7 +38,7 @@ jobs:
       contents: write
     # Two runs pushing the badges branch at once would race; queue them.
     concurrency:
-      group: mod-status-${{ github.repository }}
+      group: baise-${{ github.repository }}
       cancel-in-progress: false
     env:
       CONFIG: ${{ inputs.config }}
@@ -52,25 +52,25 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Download mod-status ${{ inputs.version }}
+      - name: Download baise ${{ inputs.version }}
         run: |
-          bin="$RUNNER_TEMP/mod-status-bin"
+          bin="$RUNNER_TEMP/baise-bin"
           mkdir -p "$bin" && cd "$bin"
-          if gh release download "$VERSION" -R KiefBC/mod-status -p 'mod-status-x86_64-linux*'; then
-            sha256sum -c mod-status-x86_64-linux.sha256
-            mv mod-status-x86_64-linux mod-status
+          if gh release download "$VERSION" -R KiefBC/baise -p 'baise-x86_64-linux*'; then
+            sha256sum -c baise-x86_64-linux.sha256
+            mv baise-x86_64-linux baise
           else
             echo "::warning::no release asset for $VERSION; building from source (slow)"
-            cargo install --locked --git https://github.com/KiefBC/mod-status --tag "$VERSION" --root "$bin"
-            mv bin/mod-status mod-status
+            cargo install --locked --git https://github.com/KiefBC/baise --tag "$VERSION" --root "$bin"
+            mv bin/baise baise
           fi
-          chmod +x mod-status
+          chmod +x baise
           echo "$bin" >> "$GITHUB_PATH"
-          ./mod-status --version
+          ./baise --version
 
       - name: Restore state.json from the ${{ inputs.branch }} branch
         run: |
-          OUT="$RUNNER_TEMP/mod-status-out"
+          OUT="$RUNNER_TEMP/baise-out"
           echo "OUT=$OUT" >> "$GITHUB_ENV"
           mkdir -p "$OUT"
           if git fetch --depth 1 origin "$BRANCH" 2>/dev/null \
@@ -86,7 +86,7 @@ jobs:
         run: |
           args=(--config "$CONFIG" --state "$OUT/state.json" --out "$OUT" --repo "$GITHUB_REPOSITORY" --branch "$BRANCH")
           set +e
-          mod-status check "${args[@]}" --sync "$GITHUB_RUN_NUMBER"
+          baise check "${args[@]}" --sync "$GITHUB_RUN_NUMBER"
           code=$?
           set -e
           if [ "$code" -eq 2 ]; then
@@ -95,8 +95,8 @@ jobs:
             exit "$code"
           fi
           if [ -n "$MOD" ]; then
-            mod-status set --config "$CONFIG" --state "$OUT/state.json" "$MOD" "$STATUS"
-            mod-status render "${args[@]}"
+            baise set --config "$CONFIG" --state "$OUT/state.json" "$MOD" "$STATUS"
+            baise render "${args[@]}"
           elif [ "$code" -eq 2 ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
@@ -117,7 +117,7 @@ jobs:
           git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $auth" \
             push --force "https://github.com/$GITHUB_REPOSITORY.git" "HEAD:refs/heads/$BRANCH"
           {
-            echo "### mod-status: build $build, sync $sync"
+            echo "### baise: build $build, sync $sync"
             echo
             cat index.md
           } >> "$GITHUB_STEP_SUMMARY"

@@ -4,9 +4,9 @@
 // Helpers outside #[test] fns are test code too.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
-use mod_status::clock::Timestamp;
-use mod_status::config::DEFAULT_VERSION_REGEX;
-use mod_status::source::steam::{parse_build, parse_version};
+use baise::clock::Timestamp;
+use baise::config::DEFAULT_VERSION_REGEX;
+use baise::source::steam::{parse_build, parse_version};
 use regex::Regex;
 
 const INFO: &str = include_str!("fixtures/steamcmd_3321460.json");

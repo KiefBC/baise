@@ -103,7 +103,7 @@ impl FromStr for Status {
     }
 }
 
-/// A manual status set with `mod-status set`, valid only on the build it was
+/// A manual status set with `baise set`, valid only on the build it was
 /// set on: the next game update falls back to the rule.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Override {
@@ -194,7 +194,7 @@ impl State {
         let build = self
             .latest_build
             .clone()
-            .ok_or_else(|| anyhow!("state has no build yet: run `mod-status check` first"))?;
+            .ok_or_else(|| anyhow!("state has no build yet: run `baise check` first"))?;
         Ok(GameVersion {
             build,
             version: self.latest_version.clone(),
@@ -206,7 +206,7 @@ impl State {
         self.last_sync.as_deref().and_then(Timestamp::parse_rfc3339)
     }
 
-    /// `mod-status set`: pin `status` for `key` on `build`; `None` clears it.
+    /// `baise set`: pin `status` for `key` on `build`; `None` clears it.
     pub fn set_override(
         &mut self,
         key: &str,

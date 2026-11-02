@@ -14,4 +14,4 @@ jobs:
   status:
     uses: ./.github/workflows/status.yml
     with:
-      config: .github/mod-status.toml
+      config: .github/baise.toml

@@ -1,4 +1,4 @@
-//! `mod-status.toml`, the file a mod repo carries: where the game's version
+//! `baise.toml`, the file a mod repo carries: where the game's version
 //! comes from, how the cards look, and one `[[mod]]` table per mod.
 
 use std::collections::BTreeSet;
@@ -110,7 +110,7 @@ fn default_on_update() -> Status {
 
 impl Config {
     pub fn parse(text: &str) -> Result<Self> {
-        let cfg: Config = toml::from_str(text).context("mod-status.toml does not parse")?;
+        let cfg: Config = toml::from_str(text).context("baise.toml does not parse")?;
         cfg.validate()?;
         Ok(cfg)
     }

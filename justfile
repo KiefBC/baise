@@ -1,4 +1,4 @@
-# mod-status - task runner. `just` lists the recipes.
+# baise - task runner. `just` lists the recipes.
 #
 # Every recipe works inside `nix develop` and from a plain shell: outside the
 # dev shell each command is re-run through `nix develop --command`.
@@ -23,7 +23,7 @@ build:
 # The release binary: static x86_64-linux-musl, what release.yml uploads.
 release:
     {{nix}} cargo build --release --locked --target {{musl}}
-    {{nix}} file target/{{musl}}/release/mod-status | tee /dev/stderr | grep -Eq 'static(ally|-pie) linked'
+    {{nix}} file target/{{musl}}/release/baise | tee /dev/stderr | grep -Eq 'static(ally|-pie) linked'
 
 # Unit and integration tests (native).
 test:
@@ -53,7 +53,7 @@ ci: fmt-check clippy test preview check-pins
 demo build="26361232":
     rm -rf target/demo && mkdir -p target/demo
     {{nix}} cargo run --release --locked --quiet -- check --offline --build {{build}} --game-version 2.04.05 \
-        --config templates/consumer/mod-status.toml --state target/demo/state.json --out target/demo \
+        --config templates/consumer/baise.toml --state target/demo/state.json --out target/demo \
         --repo KiefBC/desert-modding
 
 # The reusable workflow's default release and the templates' @ref match Cargo.toml's version.

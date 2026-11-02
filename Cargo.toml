@@ -1,11 +1,11 @@
 [package]
-name = "mod-status"
-version = "0.1.0"
+name = "baise"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
 description = "Live status badges for game mods: polls Steam for the game's build, renders an animated card per mod."
-repository = "https://github.com/KiefBC/mod-status"
+repository = "https://github.com/KiefBC/baise"
 readme = "README.md"
 include = ["src/**", "themes/**", "fonts/**", "Cargo.toml", "README.md", "LICENSE"]
 
@@ -13,7 +13,7 @@ include = ["src/**", "themes/**", "fonts/**", "Cargo.toml", "README.md", "LICENS
 path = "src/lib.rs"
 
 [[bin]]
-name = "mod-status"
+name = "baise"
 path = "src/main.rs"
 
 [dependencies]

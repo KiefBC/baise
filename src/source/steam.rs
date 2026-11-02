@@ -18,9 +18,9 @@ use super::{GameVersion, Source};
 use crate::clock::Timestamp;
 
 const USER_AGENT: &str = concat!(
-    "mod-status/",
+    "baise/",
     env!("CARGO_PKG_VERSION"),
-    " (+https://github.com/KiefBC/mod-status)"
+    " (+https://github.com/KiefBC/baise)"
 );
 
 pub struct Steam {

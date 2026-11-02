@@ -1,4 +1,4 @@
-//! `mod-status`: check | render | set | urls | preview.
+//! `baise`: check | render | set | urls | preview.
 //!
 //! Exit codes: 0 ok, 1 config or state error, 2 the source was unreachable
 //! (nothing is written, so the last published badge stays up).
@@ -9,15 +9,15 @@ use std::process::ExitCode;
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 
-use mod_status::clock::Timestamp;
-use mod_status::config::Config;
-use mod_status::outputs;
-use mod_status::render::{CardData, Theme};
-use mod_status::source::{self, manual::Manual, GameVersion, Source};
-use mod_status::state::{resolve, Origin, State, Status};
+use baise::clock::Timestamp;
+use baise::config::Config;
+use baise::outputs;
+use baise::render::{CardData, Theme};
+use baise::source::{self, manual::Manual, GameVersion, Source};
+use baise::state::{resolve, Origin, State, Status};
 
 #[derive(Parser)]
-#[command(name = "mod-status", version, about = "Live status badges for game mods")]
+#[command(name = "baise", version, about = "Live status badges for game mods")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -26,7 +26,7 @@ struct Cli {
 #[derive(clap::Args)]
 struct Common {
     /// The mod repo's declaration file.
-    #[arg(long, default_value = "mod-status.toml")]
+    #[arg(long, default_value = "baise.toml")]
     config: PathBuf,
     /// The kit's memory between runs (lives on the badges branch).
     #[arg(long, default_value = "badges/state.json")]
@@ -68,7 +68,7 @@ enum Cmd {
     },
     /// Pin a status for one mod on the current build (`auto` removes the pin).
     Set {
-        #[arg(long, default_value = "mod-status.toml")]
+        #[arg(long, default_value = "baise.toml")]
         config: PathBuf,
         #[arg(long, default_value = "badges/state.json")]
         state: PathBuf,
@@ -82,7 +82,7 @@ enum Cmd {
     },
     /// Print the BBCode and Markdown to paste, per mod.
     Urls {
-        #[arg(long, default_value = "mod-status.toml")]
+        #[arg(long, default_value = "baise.toml")]
         config: PathBuf,
         /// `owner/name` of the repo the badges branch lives in.
         #[arg(long)]
@@ -113,11 +113,11 @@ fn main() -> ExitCode {
     match run(cli.cmd) {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) if e.is::<Unreachable>() => {
-            eprintln!("mod-status: {e}");
+            eprintln!("baise: {e}");
             ExitCode::from(2)
         }
         Err(e) => {
-            eprintln!("mod-status: {e:#}");
+            eprintln!("baise: {e:#}");
             ExitCode::from(1)
         }
     }
@@ -278,7 +278,7 @@ fn draw_all(cfg: &Config, common: &Common, state: &State, current: &GameVersion)
 
 fn preview(out: &Path) -> Result<()> {
     std::fs::create_dir_all(out).with_context(|| format!("cannot create {}", out.display()))?;
-    for (name, _) in mod_status::render::theme::BUILTIN {
+    for (name, _) in baise::render::theme::BUILTIN {
         let theme = Theme::builtin(name)?;
         for status in Status::ALL {
             let moved = status == Status::Untested;

@@ -3,10 +3,10 @@
 // Helpers outside #[test] fns are test code too.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
-use mod_status::outputs;
-use mod_status::render::card::{self, CardData};
-use mod_status::render::Theme;
-use mod_status::state::Status;
+use baise::outputs;
+use baise::render::card::{self, CardData};
+use baise::render::Theme;
+use baise::state::Status;
 
 fn sample(status: Status) -> CardData {
     CardData {
@@ -82,7 +82,7 @@ fn frames_animate() {
 #[test]
 fn png_and_shields_outputs() {
     let theme = Theme::builtin("nexus").unwrap();
-    let dir = std::env::temp_dir().join(format!("mod-status-test-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("baise-test-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     outputs::write_mod(&dir, "desert-tooling", &sample(Status::Working), &theme).unwrap();
 

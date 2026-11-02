@@ -3,10 +3,10 @@
 // Helpers outside #[test] fns are test code too.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
-use mod_status::clock::Timestamp;
-use mod_status::config::ModDecl;
-use mod_status::source::GameVersion;
-use mod_status::state::{resolve, Origin, State, Status};
+use baise::clock::Timestamp;
+use baise::config::ModDecl;
+use baise::source::GameVersion;
+use baise::state::{resolve, Origin, State, Status};
 
 // 2026-11-01 14:20 UTC and the next day.
 const DAY1: Timestamp = Timestamp(1_793_542_812);

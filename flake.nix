@@ -1,5 +1,5 @@
 {
-  description = "mod-status - live status badges for game mods (Rust; static x86_64-linux-musl release binary)";
+  description = "baise - live status badges for game mods (Rust; static x86_64-linux-musl release binary)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -40,7 +40,7 @@
           AR_x86_64_unknown_linux_musl = "${musl}/bin/x86_64-unknown-linux-musl-ar";
 
           shellHook = ''
-            echo "mod-status dev shell (just lists the recipes)."
+            echo "baise dev shell (just lists the recipes)."
           '';
         };
       });

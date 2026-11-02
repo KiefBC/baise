@@ -1,4 +1,4 @@
-//! mod-status: live status badges for game mods.
+//! baise: live status badges for game mods.
 //!
 //! Five bricks, each swappable by configuration:
 //!

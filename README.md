@@ -1,11 +1,11 @@
-# mod-status
+# baise
 
 **Live status badges for game mods.** Every 15 minutes a GitHub Action asks Steam which build the
 game is on, compares it with the build each of your mods was verified on, and redraws an animated
 card per mod. Your Nexus Mods page hotlinks the card, so visitors see *"working on 2.04.05"* turn
 into *"game updated - untested"* within minutes of a patch, without you doing anything.
 
-![mod-status demo card](https://raw.githubusercontent.com/KiefBC/mod-status/badges/mod-status.gif)
+![baise demo card](https://raw.githubusercontent.com/KiefBC/baise/badges/baise.gif)
 
 Plug and play: two files in your repo, no code, any Steam game.
 
@@ -14,7 +14,7 @@ Plug and play: two files in your repo, no code, any Steam game.
 ```text
    ┌────────────┐    ┌──────────────────┐
    │  SOURCE    │    │  DECLARATION     │
-   │ Steam build│    │ mod-status.toml  │
+   │ Steam build│    │ baise.toml       │
    │ + version  │    │ build each mod   │
    │ (or manual)│    │ was verified on  │
    └─────┬──────┘    └────────┬─────────┘
@@ -36,24 +36,24 @@ Plug and play: two files in your repo, no code, any Steam game.
 | Brick | Answers | Default | Swap it with |
 | --- | --- | --- | --- |
 | Source | what the game is on now | `steam`: api.steamcmd.net build id + ISteamNews patch version | `[source] kind = "manual"` for games not on Steam |
-| Declaration | what each mod was verified on | `mod-status.toml` in your repo | one `[[mod]]` table per mod |
+| Declaration | what each mod was verified on | `baise.toml` in your repo | one `[[mod]]` table per mod |
 | Rule | how the two become a status | working if equal, else `on_update` | `on_update = "broken"`; pins via `set` / the Run workflow button |
 | Renderer | what the card looks like | `card` layout, `nexus` theme | `theme = "crimson-desert"` or `"./my-theme.toml"` |
 | Publish | where the images go | the `badges` branch of your repo | the workflow's `branch` input, or run the CLI anywhere |
 
 ## Install (3 steps)
 
-1. Copy [`templates/consumer/mod-status.toml`](templates/consumer/mod-status.toml) to your repo's root
+1. Copy [`templates/consumer/baise.toml`](templates/consumer/baise.toml) to your repo's root
    and fill in the Steam `app_id` and one `[[mod]]` per mod.
 2. Copy [`templates/consumer/status.yml`](templates/consumer/status.yml) to `.github/workflows/status.yml`:
 
    ```yaml
    jobs:
      status:
-       uses: KiefBC/mod-status/.github/workflows/status.yml@v0.1.0
+       uses: KiefBC/baise/.github/workflows/status.yml@v0.2.0
    ```
 
-3. Run it once from the Actions tab (*mod status -> Run workflow*), then paste the BBCode from
+3. Run it once from the Actions tab (*baise -> Run workflow*), then paste the BBCode from
    `index.md` on the new `badges` branch into your Nexus description:
 
    ```text
@@ -63,7 +63,7 @@ Plug and play: two files in your repo, no code, any Steam game.
 Your repo must be **public** for the images to load on Nexus. If the source is private, make a
 small public status-only repo from [`templates/standalone/`](templates/standalone/) instead.
 
-After you test a game update, either bump `build` and `date` in `mod-status.toml` (the card goes
+After you test a game update, either bump `build` and `date` in `baise.toml` (the card goes
 back to WORKING on the next run), or run the workflow by hand with the mod key and a status to pin
 it for the current build without a commit.
 
@@ -92,7 +92,7 @@ badge:
 | `wip` | IN DEVELOPMENT | LAST UPDATE |
 | `broken` | BROKEN - FIX IN PROGRESS | BROKEN SINCE |
 
-## `mod-status.toml`
+## `baise.toml`
 
 ```toml
 [source]
@@ -121,7 +121,7 @@ the version. If no title matches, the card shows the build number instead.
 ## Themes
 
 A theme is a TOML file; copy [`themes/nexus.toml`](themes/nexus.toml) and point `render.theme` at
-it (the path is relative to `mod-status.toml`):
+it (the path is relative to `baise.toml`):
 
 ```toml
 name = "my-theme"
@@ -145,16 +145,16 @@ body_weight = 500
 ## CLI
 
 The workflow runs the same binary you can run locally (`cargo install --git
-https://github.com/KiefBC/mod-status`, or download `mod-status-x86_64-linux` from a release):
+https://github.com/KiefBC/baise`, or download `baise-x86_64-linux` from a release):
 
 ```text
-mod-status check  [--config mod-status.toml] [--state badges/state.json] [--out badges]
-                  [--sync N] [--repo owner/name] [--branch badges]
-                  [--offline --build B [--game-version V]]
-mod-status render [same paths]              re-draw from state.json, no network
-mod-status set    [--config ...] [--state ...] <key> working|broken|wip|untested|auto [--build B]
-mod-status urls   [--config ...] --repo owner/name [--branch badges]
-mod-status preview [--out preview]          every status in every built-in theme
+baise check   [--config baise.toml] [--state badges/state.json] [--out badges]
+              [--sync N] [--repo owner/name] [--branch badges]
+              [--offline --build B [--game-version V]]
+baise render  [same paths]              re-draw from state.json, no network
+baise set     [--config ...] [--state ...] <key> working|broken|wip|untested|auto [--build B]
+baise urls    [--config ...] --repo owner/name [--branch badges]
+baise preview [--out preview]           every status in every built-in theme
 ```
 
 Exit codes: `0` ok, `1` config or state error, `2` the source was unreachable. On `2` nothing is

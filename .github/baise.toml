@@ -8,7 +8,7 @@ app_id = 3321460
 theme = "nexus"
 
 [[mod]]
-key = "mod-status"
-label = "mod-status demo: Crimson Desert"
+key = "baise"
+label = "baise demo: Crimson Desert"
 build = "26361232"
 date = "2026-11-01"
