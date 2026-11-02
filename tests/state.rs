@@ -21,6 +21,7 @@ fn decl(on_update: Status) -> ModDecl {
         status: Status::Working,
         on_update,
         note: String::new(),
+        releases: Vec::new(),
     }
 }
 

@@ -10,7 +10,7 @@ use baise::state::Status;
 
 fn sample(status: Status) -> CardData {
     CardData {
-        title_prefix: "LIVE STATUS // AUTO-CHECKED".into(),
+        title_prefix: "LIVE STATUS".into(),
         label: "Desert Tooling".into(),
         status,
         since: "2026-11-01".into(),
@@ -20,6 +20,7 @@ fn sample(status: Status) -> CardData {
         verified_build: "26361232".into(),
         sync: 42,
         last_sync: "2026-11-02 04:15 UTC".into(),
+        releases: Vec::new(),
     }
 }
 

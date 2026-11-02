@@ -22,3 +22,4 @@ build = "26361232"
 date = "2026-11-01"
 on_update = "broken"      # this one hooks code that every patch moves
 note = "fixed within a day of each patch"
+# releases = [{ name = "Core", version = "0.11" }, { name = "Addon", version = "1.4" }]   # up to 3 card lines

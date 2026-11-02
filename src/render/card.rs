@@ -2,20 +2,21 @@
 //! with 3x supersampling, 20 frames of 80 ms.
 //!
 //! ```text
-//! ┃ LIVE STATUS // AUTO-CHECKED                    ● LIVE   SYNC #00042
+//! ┃ LIVE STATUS                                    ● LIVE   SYNC #00042
 //! ┃ ───────────────────────────────────────────────────────────────────
-//! ┃ Desert Tooling
-//! ┃ W O R K I N G   (letters pulse left to right)
+//! ┃ Desert Tooling                                   │      Core: 0.11
+//! ┃ W O R K I N G   (letters pulse left to right)    │     Addon: 1.4
 //! ┃ ───────────────────────────────────────────────────────────────────
-//! ┃ GAME PATCH          VERIFIED            LAST SYNC
+//! ┃ GAME PATCH          VERIFIED            LAST GITHUB SYNC
 //! ┃ 2.04.05             2026-11-01          2026-11-02 04:17
 //! ┃ BUILD 26361232                          UTC
 //! ```
 
 use std::f32::consts::TAU;
 
-use super::canvas::{measure, mix, Canvas, Style};
+use super::canvas::{measure, mix, Canvas, Rgb, Style};
 use super::theme::Theme;
+use crate::config::Release;
 use crate::state::Status;
 
 pub const LOGICAL_W: f32 = 640.0;
@@ -45,6 +46,8 @@ pub struct CardData {
     pub sync: u64,
     /// `YYYY-MM-DD HH:MM UTC`, or empty before the first sync.
     pub last_sync: String,
+    /// The mod's own release lines, at most three are drawn.
+    pub releases: Vec<Release>,
 }
 
 /// Logical units -> supersampled canvas pixels.
@@ -69,6 +72,90 @@ fn fit(font: &ab_glyph::FontVec, px: f32, spacing: f32, max_w: f32, text: &str) 
         px
     } else {
         (px * max_w / w).max(px * 0.45)
+    }
+}
+
+/// The release lines: name font size, version font size, line pitch, and the
+/// widest a block may be before it shrinks (all logical units).
+const REL_NAME_PX: f32 = 11.0;
+const REL_VER_PX: f32 = 14.0;
+const REL_PITCH: f32 = 22.0;
+const REL_MAX_W: f32 = 190.0;
+/// Space between the release block's divider and the text to its left.
+const REL_GAP: f32 = 28.0;
+
+/// The release block's lines (at most three), its scale, and its width.
+struct Releases<'a> {
+    lines: Vec<(String, &'a str)>,
+    scale: f32,
+    width: f32,
+}
+
+impl Releases<'_> {
+    /// How much of the title row the block takes, gap included.
+    fn reserved(&self) -> f32 {
+        if self.lines.is_empty() {
+            0.0
+        } else {
+            self.width + REL_GAP
+        }
+    }
+}
+
+fn releases<'a>(card: &'a CardData, theme: &Theme) -> Releases<'a> {
+    let lines: Vec<(String, &str)> = card
+        .releases
+        .iter()
+        .take(crate::config::MAX_RELEASES)
+        .map(|r| (format!("{}: ", r.name), r.version.as_str()))
+        .collect();
+    let widest = lines
+        .iter()
+        .map(|(name, ver)| {
+            (measure(st(&theme.body_font, u(REL_NAME_PX), u(0.6)), name)
+                + measure(st(&theme.title_font, u(REL_VER_PX), u(0.4)), ver))
+                / K
+        })
+        .fold(0.0_f32, f32::max);
+    let scale = if widest > REL_MAX_W {
+        (REL_MAX_W / widest).max(0.5)
+    } else {
+        1.0
+    };
+    Releases {
+        lines,
+        scale,
+        width: widest * scale,
+    }
+}
+
+/// Right-aligned `<name>: <version>` lines, centred between the two rules,
+/// with a hairline divider on their left.
+fn draw_releases(c: &mut Canvas, rel: &Releases<'_>, theme: &Theme, rule: Rgb) {
+    let n = rel.lines.len();
+    if n == 0 {
+        return;
+    }
+    let (name_px, ver_px) = (REL_NAME_PX * rel.scale, REL_VER_PX * rel.scale);
+    let block_h = (n - 1) as f32 * REL_PITCH + REL_VER_PX;
+    let top = 76.0 - block_h * 0.5;
+    let div_x = MARGIN_R - rel.width - REL_GAP * 0.5;
+    c.fill_rect(u(div_x), u(44.0), u(div_x + 1.0), u(108.0), rule);
+    for (i, (name, ver)) in rel.lines.iter().enumerate() {
+        let y = top + i as f32 * REL_PITCH;
+        let ver_style = st(&theme.title_font, u(ver_px), u(0.4));
+        let name_style = st(&theme.body_font, u(name_px), u(0.6));
+        let ver_x = u(MARGIN_R) - measure(ver_style, ver);
+        let name_x = ver_x - measure(name_style, name);
+        // Sit the smaller name on the version's baseline.
+        c.text(
+            name_style,
+            name_x,
+            u(y + (ver_px - name_px) * 0.8),
+            name,
+            theme.dim,
+        );
+        c.text(ver_style, ver_x, u(y), ver, theme.text);
     }
 }
 
@@ -111,8 +198,16 @@ fn base(card: &CardData, theme: &Theme) -> Canvas {
 
     c.fill_rect(u(MARGIN_L), u(33.0), u(MARGIN_R), u(34.0), rule);
 
-    // Mod title.
-    let label_px = fit(title, 28.0, 0.0, MARGIN_R - MARGIN_L, &card.label);
+    // Release lines on the right, then the mod title in what is left.
+    let rel = releases(card, theme);
+    draw_releases(&mut c, &rel, theme, rule);
+    let label_px = fit(
+        title,
+        28.0,
+        0.0,
+        MARGIN_R - MARGIN_L - rel.reserved(),
+        &card.label,
+    );
     c.text(
         st(title, u(label_px), 0.0),
         u(MARGIN_L),
@@ -142,7 +237,7 @@ fn base(card: &CardData, theme: &Theme) -> Canvas {
     let columns = [
         ("GAME PATCH", patch, patch_sub),
         (card.status.since_label(), card.since.clone(), since_sub),
-        ("LAST SYNC", sync_value, sync_sub),
+        ("LAST GITHUB SYNC", sync_value, sync_sub),
     ];
     for (x, (label, value, sub)) in COLS.iter().zip(columns) {
         c.text(st(body, u(9.0), u(1.4)), u(*x), u(127.0), label, theme.dim);
@@ -185,9 +280,10 @@ pub fn render(card: &CardData, theme: &Theme) -> Vec<Canvas> {
     } else {
         format!("//  {}", card.note)
     };
-    let head_px = fit(title, 21.0, 2.2, MARGIN_R - MARGIN_L, headline);
+    let room = MARGIN_R - MARGIN_L - releases(card, theme).reserved();
+    let head_px = fit(title, 21.0, 2.2, room, headline);
     let head_w = measure(st(title, u(head_px), u(2.2)), headline) / K;
-    let note_room = MARGIN_R - MARGIN_L - head_w - 14.0;
+    let note_room = room - head_w - 14.0;
     let note_px = fit(body, 11.0, 0.6, note_room.max(1.0), &note);
     let n = headline.chars().count();
 

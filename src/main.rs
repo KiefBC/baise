@@ -10,7 +10,7 @@ use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 
 use baise::clock::Timestamp;
-use baise::config::Config;
+use baise::config::{Config, Release};
 use baise::outputs;
 use baise::render::{CardData, Theme};
 use baise::source::{self, manual::Manual, GameVersion, Source};
@@ -247,6 +247,7 @@ fn draw_all(cfg: &Config, common: &Common, state: &State, current: &GameVersion)
             verified_build: decl.build.clone(),
             sync: state.sync,
             last_sync: last_sync.clone(),
+            releases: decl.releases.clone(),
         };
         let w = outputs::write_mod(&common.out, &decl.key, &data, &theme)?;
         let why = match r.origin {
@@ -283,7 +284,7 @@ fn preview(out: &Path) -> Result<()> {
         for status in Status::ALL {
             let moved = status == Status::Untested;
             let data = CardData {
-                title_prefix: "LIVE STATUS // AUTO-CHECKED".into(),
+                title_prefix: "LIVE STATUS".into(),
                 label: "Desert Tooling".into(),
                 status,
                 since: if moved {
@@ -305,6 +306,16 @@ fn preview(out: &Path) -> Result<()> {
                 verified_build: "26361232".into(),
                 sync: 4242,
                 last_sync: "2026-11-02 04:15 UTC".into(),
+                releases: vec![
+                    Release {
+                        name: "Desert Tooling".into(),
+                        version: "0.11".into(),
+                    },
+                    Release {
+                        name: "Overlay".into(),
+                        version: "1.4".into(),
+                    },
+                ],
             };
             let key = format!("{name}-{status}");
             let w = outputs::write_mod(out, &key, &data, &theme)?;

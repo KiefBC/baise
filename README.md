@@ -103,7 +103,7 @@ version_regex = '(?i)patch notes.*?version\s*(\d+(?:\.\d+)+)'   # optional; this
 [render]
 layout = "card"
 theme = "crimson-desert"        # or "nexus", or "./my-theme.toml"
-title_prefix = "LIVE STATUS // AUTO-CHECKED"
+title_prefix = "LIVE STATUS"
 
 [[mod]]
 key = "desert-tooling"          # file names: desert-tooling.gif / .png / .json
@@ -113,6 +113,10 @@ date = "2026-11-01"             # when
 status = "working"              # working | broken | wip    (shown while the build matches)
 on_update = "untested"          # untested | broken         (shown once Steam moves)
 note = ""                       # optional one-liner next to the status
+releases = [                    # optional, up to 3 lines on the card: "<name>: <version>"
+  { name = "Desert Tooling", version = "0.11" },
+  { name = "Overlay",        version = "1.4" },
+]
 ```
 
 `version_regex` runs over the titles of the game's Steam announcements, newest first; group 1 is

@@ -77,7 +77,7 @@ fn default_theme() -> String {
     "nexus".into()
 }
 fn default_title_prefix() -> String {
-    "LIVE STATUS // AUTO-CHECKED".into()
+    "LIVE STATUS".into()
 }
 
 /// One mod: what it was verified on and what to show either way.
@@ -99,6 +99,21 @@ pub struct ModDecl {
     pub on_update: Status,
     #[serde(default)]
     pub note: String,
+    /// Up to [`MAX_RELEASES`] lines drawn on the card as `<name>: <version>`,
+    /// e.g. the mod's own release and a companion part's.
+    #[serde(default)]
+    pub releases: Vec<Release>,
+}
+
+/// The most `releases` a card has room for.
+pub const MAX_RELEASES: usize = 3;
+
+/// One `<name>: <version>` line on the card.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Release {
+    pub name: String,
+    pub version: String,
 }
 
 fn default_status() -> Status {
@@ -182,6 +197,18 @@ impl Config {
                     m.on_update.as_str()
                 );
             }
+            if m.releases.len() > MAX_RELEASES {
+                bail!(
+                    "mod {:?}: {} releases; the card has room for {MAX_RELEASES}",
+                    m.key,
+                    m.releases.len()
+                );
+            }
+            for r in &m.releases {
+                if r.name.trim().is_empty() || r.version.trim().is_empty() {
+                    bail!("mod {:?}: each release needs a name and a version", m.key);
+                }
+            }
         }
         Ok(())
     }
@@ -221,10 +248,25 @@ date = "2026-11-01"
         let cfg = Config::parse(EXAMPLE).unwrap();
         assert!(matches!(cfg.source, SourceConfig::Steam { app_id: 3321460, .. }));
         assert_eq!(cfg.render.layout, "card");
-        assert_eq!(cfg.render.title_prefix, "LIVE STATUS // AUTO-CHECKED");
+        assert_eq!(cfg.render.title_prefix, "LIVE STATUS");
         let m = cfg.find("desert-tooling").unwrap();
         assert_eq!(m.status, Status::Working);
         assert_eq!(m.on_update, Status::Untested);
+    }
+
+    #[test]
+    fn releases_parse() {
+        let text = EXAMPLE.replace(
+            "date = \"2026-11-01\"",
+            "date = \"2026-11-01\"\nreleases = [{ name = \"Core\", version = \"0.11\" }, \
+             { name = \"Addon\", version = \"1.4\" }]",
+        );
+        let cfg = Config::parse(&text).unwrap();
+        let m = cfg.find("desert-tooling").unwrap();
+        assert_eq!(m.releases.len(), 2);
+        assert_eq!(m.releases[1].name, "Addon");
+        assert_eq!(m.releases[1].version, "1.4");
+        assert!(Config::parse(EXAMPLE).unwrap().mods[0].releases.is_empty());
     }
 
     #[test]
@@ -253,6 +295,16 @@ date = "2026-11-01"
             ),
             ("date = \"2026-11-01\"", "date = \"2026-11-01\"\ncolour = \"red\""),
             ("theme = \"crimson-desert\"", "layout = \"strip\""),
+            (
+                "date = \"2026-11-01\"",
+                "date = \"2026-11-01\"\nreleases = [{ name = \"A\", version = \"\" }]",
+            ),
+            (
+                "date = \"2026-11-01\"",
+                "date = \"2026-11-01\"\nreleases = [{ name = \"A\", version = \"1\" }, \
+                 { name = \"B\", version = \"1\" }, { name = \"C\", version = \"1\" }, \
+                 { name = \"D\", version = \"1\" }]",
+            ),
             (
                 "app_id = 3321460",
                 "app_id = 3321460\nversion_regex = \"no group\"",
