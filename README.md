@@ -50,7 +50,7 @@ Plug and play: two files in your repo, no code, any Steam game.
    ```yaml
    jobs:
      status:
-       uses: KiefBC/baise/.github/workflows/status.yml@v0.2.0
+       uses: KiefBC/baise/.github/workflows/status.yml@v0.3.0
    ```
 
 3. Run it once from the Actions tab (*baise -> Run workflow*), then paste the BBCode from
