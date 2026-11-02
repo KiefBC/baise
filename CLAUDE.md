@@ -71,7 +71,8 @@ push. A Steam outage must never blank or falsify a badge, so keep this property 
 - `.github/workflows/status.yml` is the **reusable** workflow that consumers call. It downloads
   the prebuilt release binary (it does not compile anything), runs `check`, or `set` when it gets
   the `mod`/`status` inputs, and force-pushes a single commit to the badges branch.
-- `self-status.yml` dogfoods it hourly with `.github/baise.toml` to draw the README's demo card.
+- `self-status.yml` dogfoods it hourly, and after every successful release, with
+  `.github/baise.toml` to draw the README's demo card.
   If a release is broken, that card stops updating.
 - `templates/consumer/` is the two-file setup for a mod repo. `templates/standalone/` is a public
   status-only repo for mods whose source is private.
@@ -79,5 +80,7 @@ push. A Steam outage must never blank or falsify a badge, so keep this property 
 ## Releasing
 
 Bump `version` in `Cargo.toml`, the `inputs.version` default in `.github/workflows/status.yml`, the
-`status.yml@v…` pin in both templates, and the pin in the README install snippet. `just check-pins`
-lists any that disagree. Then tag `v<version>`, and `release.yml` attaches the binary.
+`status.yml@v…` pin in both templates, the pin in the README install snippet, and the `baise`
+release line in `.github/baise.toml`. `just check-pins`
+lists any that disagree. Then tag `v<version>`, and `release.yml` attaches the binary. When it succeeds, `self-status.yml`
+runs on its own and redraws the README card with the new release.

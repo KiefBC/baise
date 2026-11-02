@@ -1,17 +1,26 @@
 # Dogfood: the kit's own README card, drawn by the reusable workflow from the
 # released binary. If a release is broken, this card stops updating.
+#
+# It also runs right after every `release` run that succeeds, so the README card
+# is redrawn by the new binary as soon as that binary is attached. It does not
+# start earlier, while the release is still building.
 name: self-status
 
 on:
   schedule:
     - cron: "7 * * * *"
   workflow_dispatch:
+  workflow_run:
+    workflows: [release]
+    types: [completed]
 
 permissions:
   contents: write
 
 jobs:
   status:
+    # After a failed release there is no new binary to draw with.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     uses: ./.github/workflows/status.yml
     with:
       config: .github/baise.toml
