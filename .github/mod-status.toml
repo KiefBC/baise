@@ -1,0 +1,14 @@
+# The kit's own card (see self-status.yml): a demo tracking Crimson Desert,
+# so the README shows a live card and the flip to UNTESTED when the game patches.
+[source]
+kind = "steam"
+app_id = 3321460
+
+[render]
+theme = "nexus"
+
+[[mod]]
+key = "mod-status"
+label = "mod-status demo: Crimson Desert"
+build = "26361232"
+date = "2026-11-01"

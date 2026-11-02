@@ -1,0 +1,17 @@
+# Crimson Desert: dried-blood background, crimson accent, bone text, desert gold.
+name = "crimson-desert"
+
+[colors]
+background = "#1A1315"
+accent     = "#C1121F"   # crimson
+text       = "#F2E8D5"   # bone
+dim        = "#8C7F78"
+working    = "#7FB069"
+untested   = "#D9A441"   # desert gold
+wip        = "#D9A441"
+broken     = "#E63946"
+
+[font]
+file         = "exo2"
+title_weight = 700
+body_weight  = 500

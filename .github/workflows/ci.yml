@@ -1,0 +1,40 @@
+# Every push and pull request: formatting, clippy (no warnings), the tests,
+# the 8 preview cards, and the static release binary.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'flake.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      - name: fmt, clippy, tests, previews, version pins
+        run: nix develop --command just ci
+
+      - name: Static release binary
+        run: nix develop --command just release
+
+      - name: Previews are up to date
+        run: git diff --exit-code -- preview/ || (echo "::error::run 'just preview' and commit preview/"; exit 1)

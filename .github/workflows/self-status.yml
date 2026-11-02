@@ -1,0 +1,17 @@
+# Dogfood: the kit's own README card, drawn by the reusable workflow from the
+# released binary. If a release is broken, this card stops updating.
+name: self-status
+
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  status:
+    uses: ./.github/workflows/status.yml
+    with:
+      config: .github/mod-status.toml

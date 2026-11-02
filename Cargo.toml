@@ -1,0 +1,49 @@
+[package]
+name = "mod-status"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+description = "Live status badges for game mods: polls Steam for the game's build, renders an animated card per mod."
+repository = "https://github.com/KiefBC/mod-status"
+readme = "README.md"
+include = ["src/**", "themes/**", "fonts/**", "Cargo.toml", "README.md", "LICENSE"]
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "mod-status"
+path = "src/main.rs"
+
+[dependencies]
+ab_glyph = "0.2"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+color_quant = "1"
+gif = "0.14"
+png = "0.18"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
+
+# Shipped code may not panic: the binary runs unattended on a cron, and a panic
+# there is a badge that silently stops updating. Tests are exempt (clippy.toml).
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+panic = "deny"
+unreachable = "deny"
+todo = "deny"
+unimplemented = "deny"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

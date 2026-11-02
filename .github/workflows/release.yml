@@ -1,0 +1,45 @@
+# On a v* tag: build the static x86_64-linux-musl binary and attach it, with
+# its sha256, to the GitHub release the reusable workflow downloads from.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+
+      - name: Tag, Cargo.toml and workflow pins agree
+        run: |
+          test "${GITHUB_REF_NAME}" = "v$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
+          nix develop --command just check-pins
+
+      - name: Build
+        run: nix develop --command just release
+
+      - name: Package
+        run: |
+          mkdir dist
+          cp target/x86_64-unknown-linux-musl/release/mod-status dist/mod-status-x86_64-linux
+          cd dist && sha256sum mod-status-x86_64-linux > mod-status-x86_64-linux.sha256
+          ./mod-status-x86_64-linux --version
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+          fi

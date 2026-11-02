@@ -1,0 +1,24 @@
+# A status-only repo: no mod source here, just this file and the workflow.
+# Use it when your mod's source is private (raw.githubusercontent.com cannot
+# serve a private repo to Nexus visitors) or lives somewhere other than GitHub.
+
+[source]
+kind = "steam"
+app_id = 3321460
+
+[render]
+theme = "nexus"
+
+[[mod]]
+key = "my-first-mod"
+label = "My First Mod"
+build = "26361232"
+date = "2026-11-01"
+
+[[mod]]
+key = "my-second-mod"
+label = "My Second Mod"
+build = "26361232"
+date = "2026-11-01"
+on_update = "broken"      # this one hooks code that every patch moves
+note = "fixed within a day of each patch"

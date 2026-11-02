@@ -1,0 +1,17 @@
+# The reference palette: Nexus Mods' charcoal and orange.
+name = "nexus"
+
+[colors]
+background = "#29292E"
+accent     = "#FF7700"   # header line
+text       = "#F1F1F1"   # mod title, column values
+dim        = "#8E8E99"   # labels, rules, the SYNC counter
+working    = "#57C754"
+untested   = "#F2C230"
+wip        = "#4FA3F7"
+broken     = "#E5484D"
+
+[font]
+file         = "exo2"    # the bundled Exo 2 (OFL), or a .ttf/.otf path relative to this file
+title_weight = 700
+body_weight  = 500

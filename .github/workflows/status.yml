@@ -1,0 +1,123 @@
+# The REUSABLE workflow. A mod repo calls it every 15 minutes (see
+# templates/consumer/status.yml); it reads the game's build, draws the cards
+# and force-pushes them as a single commit to the `badges` branch, which Nexus
+# Mods (or a README) hotlinks through raw.githubusercontent.com.
+#
+# Nothing is compiled here: it downloads the prebuilt static binary from this
+# repo's release, so a run takes seconds.
+name: mod-status
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: Path to mod-status.toml in the calling repo.
+        type: string
+        default: mod-status.toml
+      branch:
+        description: Branch the cards are published to. It is rewritten on every run.
+        type: string
+        default: badges
+      version:
+        description: The mod-status release to download. Keep it equal to the @ref you call this workflow with.
+        type: string
+        default: v0.1.0
+      mod:
+        description: Optional manual override - the mod key.
+        type: string
+        default: ""
+      status:
+        description: With `mod` - working | broken | wip | untested | auto (auto removes the pin).
+        type: string
+        default: ""
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Two runs pushing the badges branch at once would race; queue them.
+    concurrency:
+      group: mod-status-${{ github.repository }}
+      cancel-in-progress: false
+    env:
+      CONFIG: ${{ inputs.config }}
+      BRANCH: ${{ inputs.branch }}
+      VERSION: ${{ inputs.version }}
+      MOD: ${{ inputs.mod }}
+      STATUS: ${{ inputs.status }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download mod-status ${{ inputs.version }}
+        run: |
+          bin="$RUNNER_TEMP/mod-status-bin"
+          mkdir -p "$bin" && cd "$bin"
+          if gh release download "$VERSION" -R KiefBC/mod-status -p 'mod-status-x86_64-linux*'; then
+            sha256sum -c mod-status-x86_64-linux.sha256
+            mv mod-status-x86_64-linux mod-status
+          else
+            echo "::warning::no release asset for $VERSION; building from source (slow)"
+            cargo install --locked --git https://github.com/KiefBC/mod-status --tag "$VERSION" --root "$bin"
+            mv bin/mod-status mod-status
+          fi
+          chmod +x mod-status
+          echo "$bin" >> "$GITHUB_PATH"
+          ./mod-status --version
+
+      - name: Restore state.json from the ${{ inputs.branch }} branch
+        run: |
+          OUT="$RUNNER_TEMP/mod-status-out"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          mkdir -p "$OUT"
+          if git fetch --depth 1 origin "$BRANCH" 2>/dev/null \
+             && git cat-file -e FETCH_HEAD:state.json 2>/dev/null; then
+            git show FETCH_HEAD:state.json > "$OUT/state.json"
+            echo "restored state.json"
+          else
+            echo "no previous state: first run"
+          fi
+
+      - name: Check the game and draw the cards
+        id: check
+        run: |
+          args=(--config "$CONFIG" --state "$OUT/state.json" --out "$OUT" --repo "$GITHUB_REPOSITORY" --branch "$BRANCH")
+          set +e
+          mod-status check "${args[@]}" --sync "$GITHUB_RUN_NUMBER"
+          code=$?
+          set -e
+          if [ "$code" -eq 2 ]; then
+            echo "::warning::game version source unreachable; the published cards stay as they are"
+          elif [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
+          if [ -n "$MOD" ]; then
+            mod-status set --config "$CONFIG" --state "$OUT/state.json" "$MOD" "$STATUS"
+            mod-status render "${args[@]}"
+          elif [ "$code" -eq 2 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to the ${{ inputs.branch }} branch
+        if: steps.check.outputs.skip != 'true'
+        working-directory: ${{ env.OUT }}
+        run: |
+          build=$(jq -r '.latest_build // "?"' state.json)
+          sync=$(jq -r '.sync // 0' state.json)
+          git init -q -b "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "status: build $build, sync $sync"
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $auth" \
+            push --force "https://github.com/$GITHUB_REPOSITORY.git" "HEAD:refs/heads/$BRANCH"
+          {
+            echo "### mod-status: build $build, sync $sync"
+            echo
+            cat index.md
+          } >> "$GITHUB_STEP_SUMMARY"
