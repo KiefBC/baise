@@ -21,7 +21,7 @@ on:
       version:
         description: The baise release to download. Keep it equal to the @ref you call this workflow with.
         type: string
-        default: v0.3.0
+        default: v0.4.0
       mod:
         description: Optional manual override - the mod key.
         type: string
