@@ -50,7 +50,7 @@ Plug and play: two files in your repo, no code, any Steam game.
    ```yaml
    jobs:
      status:
-       uses: KiefBC/baise/.github/workflows/status.yml@v0.4.0
+       uses: KiefBC/baise/.github/workflows/status.yml@v0.5.0
    ```
 
 3. Run it once from the Actions tab (*baise -> Run workflow*), then paste the BBCode from
@@ -114,17 +114,24 @@ status = "working"              # working | broken | wip    (shown while the bui
 on_update = "untested"          # untested | broken         (shown once Steam moves)
 note = ""                       # optional one-liner next to the status
 releases = [                    # optional, up to 3 lines on the card: "<name>: <version>"
-  { name = "Desert Tooling", version = "0.11" },
-  { name = "Overlay",        version = "1.4" },
+  { name = "Desert Tooling", tag = "desert-tooling-v" },              # newest desert-tooling-v* release
+  { name = "Overlay",        tag = "v", repo = "KiefBC/overlay" },    # ...in another repo
+  # { name = "Pinned", version = "1.4" },                             # or fixed by hand
 ]
 ```
 
 `version_regex` runs over the titles of the game's Steam announcements, newest first; group 1 is
 the version. If no title matches, the card shows the build number instead.
 
-The card header shows `RELEASED <date>`, the publish date of the repo's latest GitHub release
-(drafts and pre-releases are skipped). A repo with no releases gets no date. Outside the workflow,
-pass it yourself with `--released YYYY-MM-DD`.
+Release versions are never typed by hand. Each `releases` line names a tag prefix, and the card
+draws the newest GitHub release whose tag starts with it, prefix stripped (`desert-tooling-v0.16.0`
+draws `0.16.0`). Drafts and pre-releases are skipped. `repo` looks the tag up in another public
+repo; the default is the repo the workflow runs in. The header shows `RELEASED <date>`, the newest
+of those releases' dates (for a mod with no tagged lines, the repo's newest release).
+
+The workflow saves the release lists it read as `releases.json` on the badges branch. If GitHub
+cannot be reached, it reuses that file, so a lookup failure never blanks a version line. Locally,
+pass the same file with `--github-releases`, or a date with `--released YYYY-MM-DD`.
 
 ## Themes
 

@@ -21,7 +21,7 @@ on:
       version:
         description: The baise release to download. Keep it equal to the @ref you call this workflow with.
         type: string
-        default: v0.4.0
+        default: v0.5.0
       mod:
         description: Optional manual override - the mod key.
         type: string
@@ -85,14 +85,32 @@ jobs:
         id: check
         run: |
           args=(--config "$CONFIG" --state "$OUT/state.json" --out "$OUT" --repo "$GITHUB_REPOSITORY" --branch "$BRANCH")
-          # The latest GitHub release's date goes in the card header. No release
-          # (or a failed lookup) just leaves it off; it never fails the run.
-          released=$(gh release view -R "$GITHUB_REPOSITORY" --json publishedAt -q .publishedAt 2>/dev/null | cut -c1-10 || true)
-          if [ -n "$released" ]; then
-            echo "latest release: $released"
-            args+=(--released "$released")
+          # Release lines and dates come from GitHub: list the releases of every
+          # repo baise.toml names into one {"owner/name": [...]} file. If any
+          # lookup fails, reuse the file the last run published, so a GitHub blip
+          # never blanks a version line.
+          new="$RUNNER_TEMP/releases.json"
+          ok=true
+          echo '{}' > "$new"
+          for repo in $(baise release-repos --config "$CONFIG" --repo "$GITHUB_REPOSITORY"); do
+            if list=$(gh release list -R "$repo" -L 200 --json tagName,publishedAt,isDraft,isPrerelease); then
+              jq --arg r "$repo" --argjson l "$list" '. + {($r): $l}' "$new" > "$new.tmp" && mv "$new.tmp" "$new"
+              echo "$repo: $(jq length <<<"$list") releases"
+            else
+              echo "::warning::cannot list releases of $repo"
+              ok=false
+            fi
+          done
+          if $ok; then
+            mv "$new" "$OUT/releases.json"
+          elif git cat-file -e FETCH_HEAD:releases.json 2>/dev/null; then
+            echo "::warning::reusing the release list the last run published"
+            git show FETCH_HEAD:releases.json > "$OUT/releases.json"
           else
-            echo "no GitHub release found; the card shows no release date"
+            echo "::warning::no release list to fall back on; tagged release lines are left off"
+          fi
+          if [ -f "$OUT/releases.json" ]; then
+            args+=(--github-releases "$OUT/releases.json")
           fi
           set +e
           baise check "${args[@]}" --sync "$GITHUB_RUN_NUMBER"

@@ -16,8 +16,14 @@ use std::f32::consts::TAU;
 
 use super::canvas::{measure, mix, Canvas, Rgb, Style};
 use super::theme::Theme;
-use crate::config::Release;
 use crate::state::Status;
+
+/// One resolved `<name>: <version>` line.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReleaseLine {
+    pub name: String,
+    pub version: String,
+}
 
 pub const LOGICAL_W: f32 = 640.0;
 pub const LOGICAL_H: f32 = 184.0;
@@ -47,7 +53,7 @@ pub struct CardData {
     /// `YYYY-MM-DD HH:MM UTC`, or empty before the first sync.
     pub last_sync: String,
     /// The mod's own release lines, at most three are drawn.
-    pub releases: Vec<Release>,
+    pub releases: Vec<ReleaseLine>,
     /// `YYYY-MM-DD` of the mod's latest release, drawn after the title prefix.
     pub released: Option<String>,
 }

@@ -15,6 +15,7 @@
 pub mod clock;
 pub mod config;
 pub mod outputs;
+pub mod releases;
 pub mod render;
 pub mod source;
 pub mod state;

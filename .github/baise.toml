@@ -12,5 +12,5 @@ key = "baise"
 label = "baise demo: Crimson Desert"
 build = "26361232"
 date = "2026-11-01"
-# The baise release that drew this card; `just check-pins` keeps it equal to Cargo.toml.
-releases = [{ name = "baise", version = "0.4.0" }]
+# The newest baise release, read from this repo's `v*` tags.
+releases = [{ name = "baise", tag = "v" }]

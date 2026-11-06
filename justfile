@@ -56,7 +56,7 @@ demo build="26361232":
         --config templates/consumer/baise.toml --state target/demo/state.json --out target/demo \
         --repo KiefBC/desert-modding
 
-# The reusable workflow's default release, the templates' @ref and the demo card match Cargo.toml's version.
+# The reusable workflow's default release and the templates' @ref match Cargo.toml's version.
 check-pins:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -68,6 +68,4 @@ check-pins:
         grep -q "status.yml@$v\$" "$f" || { echo "$f: not pinned to @$v"; fail=1; }
     done
     grep -q "status.yml@$v" README.md || { echo "README.md: install snippet not pinned to @$v"; fail=1; }
-    grep -q "name = \"baise\", version = \"${v#v}\"" .github/baise.toml \
-        || { echo ".github/baise.toml: demo card's baise release is not ${v#v}"; fail=1; }
     exit $fail

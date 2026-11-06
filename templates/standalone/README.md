@@ -6,3 +6,4 @@ the BBCode for each mod's Nexus page.
 
 To update after testing a game patch: edit `build` and `date` in `baise.toml`, or run the
 workflow by hand with the mod key and a status.
+Release versions and dates are read from GitHub releases, so a new release needs no edit here.

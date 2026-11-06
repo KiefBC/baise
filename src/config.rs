@@ -108,12 +108,22 @@ pub struct ModDecl {
 /// The most `releases` a card has room for.
 pub const MAX_RELEASES: usize = 3;
 
-/// One `<name>: <version>` line on the card.
+/// One `<name>: <version>` line on the card. The version comes from the newest
+/// GitHub release whose tag starts with `tag` (see [`crate::releases`]), or is
+/// fixed with `version`, which wins when both are set.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Release {
     pub name: String,
-    pub version: String,
+    /// Tag prefix, e.g. `desert-tooling-v`; the rest of the tag is the version.
+    #[serde(default)]
+    pub tag: Option<String>,
+    /// `owner/name` whose releases `tag` is looked up in; default: the repo the
+    /// workflow runs in.
+    #[serde(default)]
+    pub repo: Option<String>,
+    #[serde(default)]
+    pub version: Option<String>,
 }
 
 fn default_status() -> Status {
@@ -205,13 +215,33 @@ impl Config {
                 );
             }
             for r in &m.releases {
-                if r.name.trim().is_empty() || r.version.trim().is_empty() {
-                    bail!("mod {:?}: each release needs a name and a version", m.key);
+                let blank = |v: &Option<String>| v.as_deref().is_some_and(|s| s.trim().is_empty());
+                if r.name.trim().is_empty()
+                    || blank(&r.version)
+                    || blank(&r.tag)
+                    || blank(&r.repo)
+                    || (r.version.is_none() && r.tag.is_none())
+                {
+                    bail!(
+                        "mod {:?}: each release needs a name and a tag (or a fixed version)",
+                        m.key
+                    );
+                }
+                if let Some(repo) = &r.repo {
+                    if !valid_repo(repo) {
+                        bail!("mod {:?}: release repo {repo:?}: expected owner/name", m.key);
+                    }
                 }
             }
         }
         Ok(())
     }
+}
+
+/// `owner/name`, one slash, both parts non-empty.
+pub fn valid_repo(repo: &str) -> bool {
+    repo.split_once('/')
+        .is_some_and(|(o, n)| !o.is_empty() && !n.is_empty() && !n.contains('/'))
 }
 
 /// Keys become file names and URL path segments.
@@ -258,14 +288,16 @@ date = "2026-11-01"
     fn releases_parse() {
         let text = EXAMPLE.replace(
             "date = \"2026-11-01\"",
-            "date = \"2026-11-01\"\nreleases = [{ name = \"Core\", version = \"0.11\" }, \
-             { name = \"Addon\", version = \"1.4\" }]",
+            "date = \"2026-11-01\"\nreleases = [{ name = \"Core\", tag = \"core-v\" }, \
+             { name = \"Addon\", version = \"1.4\", repo = \"KiefBC/addon\" }]",
         );
         let cfg = Config::parse(&text).unwrap();
         let m = cfg.find("desert-tooling").unwrap();
         assert_eq!(m.releases.len(), 2);
+        assert_eq!(m.releases[0].tag.as_deref(), Some("core-v"));
         assert_eq!(m.releases[1].name, "Addon");
-        assert_eq!(m.releases[1].version, "1.4");
+        assert_eq!(m.releases[1].version.as_deref(), Some("1.4"));
+        assert_eq!(m.releases[1].repo.as_deref(), Some("KiefBC/addon"));
         assert!(Config::parse(EXAMPLE).unwrap().mods[0].releases.is_empty());
     }
 
@@ -298,6 +330,14 @@ date = "2026-11-01"
             (
                 "date = \"2026-11-01\"",
                 "date = \"2026-11-01\"\nreleases = [{ name = \"A\", version = \"\" }]",
+            ),
+            (
+                "date = \"2026-11-01\"",
+                "date = \"2026-11-01\"\nreleases = [{ name = \"A\" }]",
+            ),
+            (
+                "date = \"2026-11-01\"",
+                "date = \"2026-11-01\"\nreleases = [{ name = \"A\", tag = \"v\", repo = \"nope\" }]",
             ),
             (
                 "date = \"2026-11-01\"",

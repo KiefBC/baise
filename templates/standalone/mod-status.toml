@@ -22,4 +22,5 @@ build = "26361232"
 date = "2026-11-01"
 on_update = "broken"      # this one hooks code that every patch moves
 note = "fixed within a day of each patch"
-# releases = [{ name = "Core", version = "0.11" }, { name = "Addon", version = "1.4" }]   # up to 3 card lines
+# Up to 3 card lines; each version is the newest release tagged <tag>* in `repo` (a public repo).
+# releases = [{ name = "Core", tag = "core-v", repo = "you/core" }, { name = "Addon", version = "1.4" }]

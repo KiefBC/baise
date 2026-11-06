@@ -1,4 +1,4 @@
-//! `baise`: check | render | set | urls | preview.
+//! `baise`: check | render | set | urls | release-repos | preview.
 //!
 //! Exit codes: 0 ok, 1 config or state error, 2 the source was unreachable
 //! (nothing is written, so the last published badge stays up).
@@ -10,8 +10,10 @@ use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 
 use baise::clock::Timestamp;
-use baise::config::{Config, Release};
+use baise::config::Config;
 use baise::outputs;
+use baise::releases;
+use baise::render::card::ReleaseLine;
 use baise::render::{CardData, Theme};
 use baise::source::{self, manual::Manual, GameVersion, Source};
 use baise::state::{resolve, Origin, State, Status};
@@ -40,8 +42,11 @@ struct Common {
     /// The branch the outputs are published to (for index.md).
     #[arg(long, default_value = "badges")]
     branch: String,
-    /// `YYYY-MM-DD` of the mod's latest release, shown in the card header
-    /// (the workflow passes the repo's latest GitHub release). Empty: no date.
+    /// `{"owner/name": [gh release list --json ...]}`, saved by the workflow:
+    /// fills tagged release lines and the header's release date.
+    #[arg(long)]
+    github_releases: Option<PathBuf>,
+    /// `YYYY-MM-DD` to show as every card's release date, overriding GitHub's.
     #[arg(long, default_value = "")]
     released: String,
 }
@@ -93,6 +98,14 @@ enum Cmd {
         repo: String,
         #[arg(long, default_value = "badges")]
         branch: String,
+    },
+    /// Print the `owner/name` repos whose GitHub releases the cards need, one per line.
+    ReleaseRepos {
+        #[arg(long, default_value = "baise.toml")]
+        config: PathBuf,
+        /// The repo the workflow runs in: the default for lines that name none.
+        #[arg(long)]
+        repo: String,
     },
     /// Render every status in every built-in theme into a directory.
     Preview {
@@ -203,15 +216,20 @@ fn run(cmd: Cmd) -> Result<()> {
             }
             Ok(())
         }
+        Cmd::ReleaseRepos { config, repo } => {
+            let cfg = Config::load(&config)?;
+            check_repo(&repo)?;
+            for r in releases::repos(&cfg, &repo) {
+                println!("{r}");
+            }
+            Ok(())
+        }
         Cmd::Preview { out } => preview(&out),
     }
 }
 
 fn check_repo(repo: &str) -> Result<()> {
-    let ok = repo
-        .split_once('/')
-        .is_some_and(|(o, n)| !o.is_empty() && !n.is_empty() && !n.contains('/'));
-    if !ok {
+    if !baise::config::valid_repo(repo) {
         bail!("--repo {repo:?}: expected owner/name");
     }
     Ok(())
@@ -233,6 +251,11 @@ fn draw_all(cfg: &Config, common: &Common, state: &State, current: &GameVersion)
         d if baise::clock::is_date(d) => Some(d.to_owned()),
         d => bail!("--released {d:?} is not YYYY-MM-DD"),
     };
+    let gh = common
+        .github_releases
+        .as_deref()
+        .map(releases::load)
+        .transpose()?;
     println!(
         "game build {}{}, sync #{}",
         current.build,
@@ -245,6 +268,10 @@ fn draw_all(cfg: &Config, common: &Common, state: &State, current: &GameVersion)
     );
     for decl in &cfg.mods {
         let r = resolve(decl, &current.build, state);
+        let rel = releases::resolve(decl, gh.as_ref(), common.repo.as_deref());
+        for why in &rel.missing {
+            eprintln!("warning: mod {:?}: release line {why}; not drawn", decl.key);
+        }
         let data = CardData {
             title_prefix: cfg.render.title_prefix.clone(),
             label: r.label.clone(),
@@ -256,8 +283,8 @@ fn draw_all(cfg: &Config, common: &Common, state: &State, current: &GameVersion)
             verified_build: decl.build.clone(),
             sync: state.sync,
             last_sync: last_sync.clone(),
-            releases: decl.releases.clone(),
-            released: released.clone(),
+            releases: rel.lines,
+            released: released.clone().or(rel.released),
         };
         let w = outputs::write_mod(&common.out, &decl.key, &data, &theme)?;
         let why = match r.origin {
@@ -317,11 +344,11 @@ fn preview(out: &Path) -> Result<()> {
                 sync: 4242,
                 last_sync: "2026-11-02 04:15 UTC".into(),
                 releases: vec![
-                    Release {
+                    ReleaseLine {
                         name: "Desert Tooling".into(),
                         version: "0.11".into(),
                     },
-                    Release {
+                    ReleaseLine {
                         name: "Overlay".into(),
                         version: "1.4".into(),
                     },

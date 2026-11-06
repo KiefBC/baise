@@ -36,6 +36,8 @@ outside the dev shell each command is re-run through `nix develop --command`.
   responses in `tests/fixtures/`. The Steam HTTP call is the only impure part of the crate.
 - **Declaration** (`config.rs`) parses and validates `baise.toml`. Each `[[mod]]` gives `key`,
   `build`, `date`, `status` (working|wip|broken) and `on_update` (untested|broken).
+  `releases` lines name a GitHub tag prefix (and optionally a `repo`). `releases.rs` matches them
+  against the `releases.json` the workflow saves with `gh release list`; the binary never calls GitHub.
 - **Rule** (`state.rs`). `resolve()` is pure and checks in this order: a pin (`set` override) for the
   *current* build, then the declared status if `decl.build == current_build`, otherwise `on_update`
   dated from `first_seen[current_build]`. `State` (`state.json`) records the first date each build
@@ -80,7 +82,6 @@ push. A Steam outage must never blank or falsify a badge, so keep this property 
 ## Releasing
 
 Bump `version` in `Cargo.toml`, the `inputs.version` default in `.github/workflows/status.yml`, the
-`status.yml@v…` pin in both templates, the pin in the README install snippet, and the `baise`
-release line in `.github/baise.toml`. `just check-pins`
+`status.yml@v…` pin in both templates, and the pin in the README install snippet. `just check-pins`
 lists any that disagree. Then tag `v<version>`, and `release.yml` attaches the binary. When it succeeds, `self-status.yml`
 runs on its own and redraws the README card with the new release.
