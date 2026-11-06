@@ -85,6 +85,15 @@ jobs:
         id: check
         run: |
           args=(--config "$CONFIG" --state "$OUT/state.json" --out "$OUT" --repo "$GITHUB_REPOSITORY" --branch "$BRANCH")
+          # The latest GitHub release's date goes in the card header. No release
+          # (or a failed lookup) just leaves it off; it never fails the run.
+          released=$(gh release view -R "$GITHUB_REPOSITORY" --json publishedAt -q .publishedAt 2>/dev/null | cut -c1-10 || true)
+          if [ -n "$released" ]; then
+            echo "latest release: $released"
+            args+=(--released "$released")
+          else
+            echo "no GitHub release found; the card shows no release date"
+          fi
           set +e
           baise check "${args[@]}" --sync "$GITHUB_RUN_NUMBER"
           code=$?

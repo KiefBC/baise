@@ -122,6 +122,10 @@ releases = [                    # optional, up to 3 lines on the card: "<name>: 
 `version_regex` runs over the titles of the game's Steam announcements, newest first; group 1 is
 the version. If no title matches, the card shows the build number instead.
 
+The card header shows `RELEASED <date>`, the publish date of the repo's latest GitHub release
+(drafts and pre-releases are skipped). A repo with no releases gets no date. Outside the workflow,
+pass it yourself with `--released YYYY-MM-DD`.
+
 ## Themes
 
 A theme is a TOML file; copy [`themes/nexus.toml`](themes/nexus.toml) and point `render.theme` at

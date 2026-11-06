@@ -2,7 +2,7 @@
 //! with 3x supersampling, 20 frames of 80 ms.
 //!
 //! ```text
-//! ┃ LIVE STATUS                                    ● LIVE   SYNC #00042
+//! ┃ LIVE STATUS  ·  RELEASED 2026-10-28            ● LIVE   SYNC #00042
 //! ┃ ───────────────────────────────────────────────────────────────────
 //! ┃ Desert Tooling                                   │      Core: 0.11
 //! ┃ W O R K I N G   (letters pulse left to right)    │     Addon: 1.4
@@ -48,6 +48,8 @@ pub struct CardData {
     pub last_sync: String,
     /// The mod's own release lines, at most three are drawn.
     pub releases: Vec<Release>,
+    /// `YYYY-MM-DD` of the mod's latest release, drawn after the title prefix.
+    pub released: Option<String>,
 }
 
 /// Logical units -> supersampled canvas pixels.
@@ -176,13 +178,19 @@ fn base(card: &CardData, theme: &Theme) -> Canvas {
     // Header.
     let body = &theme.body_font;
     let title = &theme.title_font;
+    let prefix_style = st(title, u(10.0), u(1.6));
     c.text(
-        st(title, u(10.0), u(1.6)),
+        prefix_style,
         u(MARGIN_L),
         u(13.0),
         &card.title_prefix,
         theme.accent,
     );
+    if let Some(date) = &card.released {
+        let x = u(MARGIN_L) + measure(prefix_style, &card.title_prefix) + u(10.0);
+        let released = format!("·  RELEASED {date}");
+        c.text(st(body, u(10.0), u(1.2)), x, u(13.0), &released, theme.dim);
+    }
     let sync = format!("SYNC #{:05}", card.sync);
     let sync_w = measure(st(body, u(10.0), u(1.2)), &sync);
     c.text(

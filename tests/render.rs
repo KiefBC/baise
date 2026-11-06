@@ -21,6 +21,7 @@ fn sample(status: Status) -> CardData {
         sync: 42,
         last_sync: "2026-11-02 04:15 UTC".into(),
         releases: Vec::new(),
+        released: Some("2026-10-28".into()),
     }
 }
 

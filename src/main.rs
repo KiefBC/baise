@@ -40,6 +40,10 @@ struct Common {
     /// The branch the outputs are published to (for index.md).
     #[arg(long, default_value = "badges")]
     branch: String,
+    /// `YYYY-MM-DD` of the mod's latest release, shown in the card header
+    /// (the workflow passes the repo's latest GitHub release). Empty: no date.
+    #[arg(long, default_value = "")]
+    released: String,
 }
 
 #[derive(Subcommand)]
@@ -224,6 +228,11 @@ fn draw_all(cfg: &Config, common: &Common, state: &State, current: &GameVersion)
     std::fs::create_dir_all(&common.out)
         .with_context(|| format!("cannot create {}", common.out.display()))?;
     let last_sync = state.last_sync().map(Timestamp::datetime).unwrap_or_default();
+    let released = match common.released.trim() {
+        "" => None,
+        d if baise::clock::is_date(d) => Some(d.to_owned()),
+        d => bail!("--released {d:?} is not YYYY-MM-DD"),
+    };
     println!(
         "game build {}{}, sync #{}",
         current.build,
@@ -248,6 +257,7 @@ fn draw_all(cfg: &Config, common: &Common, state: &State, current: &GameVersion)
             sync: state.sync,
             last_sync: last_sync.clone(),
             releases: decl.releases.clone(),
+            released: released.clone(),
         };
         let w = outputs::write_mod(&common.out, &decl.key, &data, &theme)?;
         let why = match r.origin {
@@ -316,6 +326,7 @@ fn preview(out: &Path) -> Result<()> {
                         version: "1.4".into(),
                     },
                 ],
+                released: Some("2026-10-28".into()),
             };
             let key = format!("{name}-{status}");
             let w = outputs::write_mod(out, &key, &data, &theme)?;
